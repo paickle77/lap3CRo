@@ -1,109 +1,111 @@
-import { StyleSheet, Image, Platform } from 'react-native';
+import React, { useCallback } from "react";
+import { StyleSheet, Text, View, ViewToken } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { FlatList } from "react-native-gesture-handler";
+import { GestureHandlerRootView } from "react-native-gesture-handler"; // Nhập GestureHandlerRootView
 
-import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+// 🔹 Dữ liệu mẫu (danh sách item)
+const data = [
+  { id: "1", title: "Item 1" },
+  { id: "2", title: "Item 2" },
+  { id: "3", title: "Item 3" },
+  { id: "4", title: "Item 4" },
+  { id: "5", title: "Item 5" },
+  { id: "6", title: "Item 6" },
+  { id: "7", title: "Item 7" },
+  { id: "8", title: "Item 8" },
+  { id: "9", title: "Item 9" },
+  { id: "10", title: "Item 10" },
+  { id: "11", title: "Item 11" },
+  { id: "12", title: "Item 12" },
+];
 
-export default function TabTwoScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explore</ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Custom fonts">
-        <ThemedText>
-          Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-            custom fonts such as this one.
-          </ThemedText>
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user's current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
-  );
+// 🔹 Định nghĩa kiểu dữ liệu cho ListItemProps
+interface ListItemProps {
+  item: { id: string; title: string }; // Một item chứa id và title
+  viewableItems: Animated.SharedValue<ViewToken[]>; // Danh sách các item đang hiển thị
 }
 
+// 🔹 Component hiển thị từng item trong danh sách
+const ListItem: React.FC<ListItemProps> = React.memo(({ item, viewableItems }) => {
+  // 🟢 Dùng useAnimatedStyle để tạo hiệu ứng động cho từng item
+  const rStyle = useAnimatedStyle(() => {
+    // 🔹 Kiểm tra xem item này có đang hiển thị trên màn hình không
+    const isVisible = viewableItems.value.some(
+      (viewableItem) => viewableItem.isViewable && viewableItem.item.id === item.id
+    );
+
+    // 🔹 Nếu item đang hiển thị, nó sẽ hiện rõ và scale lên 1
+    // 🔹 Nếu item không hiển thị, nó sẽ mờ đi và scale nhỏ lại
+    return {
+      opacity: withTiming(isVisible ? 1 : 0.3), // Hiển thị hoặc làm mờ
+      transform: [{ scale: withTiming(isVisible ? 1 : 0.8) }], // Phóng to hoặc thu nhỏ
+    };
+  });
+
+  // 🟢 Trả về một View động có hiệu ứng fade-in và scale
+  return (
+    <Animated.View style={[styles.item, rStyle]}>
+      <Text style={styles.itemText}>{item.title}</Text>
+    </Animated.View>
+  );
+});
+
+// 🔹 Component chính chứa danh sách các item
+const Explore = () => {
+  // 🟢 useSharedValue lưu danh sách các item đang hiển thị
+  const viewableItems = useSharedValue<ViewToken[]>([]);
+
+  // 🟢 useCallback giúp tối ưu hiệu suất, tránh tạo lại hàm không cần thiết
+  const onViewableItemsChanged = useCallback(({ viewableItems: vItems }: { viewableItems: ViewToken[] }) => {
+    viewableItems.value = vItems; // Cập nhật danh sách item đang hiển thị
+  }, []);
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}> {/* Bọc toàn bộ cây component với GestureHandlerRootView */}
+      <View style={styles.container}>
+        {/* 🟢 FlatList hiển thị danh sách item */}
+        <FlatList
+          data={data} // Dữ liệu danh sách
+          keyExtractor={(item) => item.id} // Xác định key duy nhất cho mỗi item
+          renderItem={({ item }) => <ListItem item={item} viewableItems={viewableItems} />} // Render từng item
+          onViewableItemsChanged={onViewableItemsChanged} // Gọi khi item xuất hiện trên màn hình
+          viewabilityConfig={{ itemVisiblePercentThreshold: 50 }} // Item phải hiển thị ít nhất 50% mới tính là hiển thị
+          contentContainerStyle={{ paddingBottom: 20 }} // Thêm padding dưới cùng danh sách
+        />
+        <Text style={styles.title}>Explore List</Text>
+      </View>
+    </GestureHandlerRootView> 
+  );
+};
+
+export default Explore;
+
+// 🟢 Style cho giao diện
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    flex: 1,
+    backgroundColor: "#f8f9fa",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 20,
   },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
+  item: {
+    width: 300, // Độ rộng mỗi item
+    padding: 20, // Khoảng cách bên trong item
+    marginVertical: 10, // Khoảng cách giữa các item
+    backgroundColor: "#3498db", // Màu nền xanh
+    borderRadius: 10, // Bo góc
+    alignItems: "center", // Canh giữa nội dung
+  },
+  itemText: {
+    color: "white", // Màu chữ trắng
+    fontSize: 18, // Cỡ chữ lớn
+    fontWeight: "bold", // Chữ đậm
+  },
+  title: {
+    fontSize: 20, // Cỡ chữ tiêu đề
+    fontWeight: "bold", // Chữ đậm
+    marginTop: 20, // Khoảng cách phía trên tiêu đề
   },
 });

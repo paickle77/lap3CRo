@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, FlatList, Image, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Image } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,10 +9,13 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 
-// Dữ liệu danh sách
-const DATA = Array.from({ length: 20 }, (_, i) => ({
+// Dữ liệu danh sách sinh viên
+const STUDENT_DATA = Array.from({ length: 20 }, (_, i) => ({
   id: `${i}`,
-  title: `Popular Quiz ${i + 1}`,
+  name: `Student ${i + 1}`,
+  age: 20 + (i % 5),  // Tuổi ngẫu nhiên từ 20 đến 24
+  major: i % 2 === 0 ? "Computer Science" : "Electrical Engineering", // Chuyên ngành thay đổi
+  imageUrl: "https://via.placeholder.com/150", // Hình ảnh đại diện của sinh viên
 }));
 
 const HEADER_MAX_HEIGHT = 200;
@@ -69,20 +72,25 @@ const ScrollHeader = () => {
           source={{ uri: "https://via.placeholder.com/150" }}
           style={[styles.avatar, avatarStyle]}
         />
-        <Animated.Text style={[styles.title, titleStyle]}>LAB 3</Animated.Text>
+        <Animated.Text style={[styles.title, titleStyle]}>Student List</Animated.Text>
       </Animated.View>
 
-      {/* 🟢 Danh sách nội dung */}
-      <FlatList
-        data={DATA}
+      {/* 🟢 Danh sách sinh viên */}
+      <Animated.FlatList
+        data={STUDENT_DATA}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.listItem}>
-            <Text style={styles.listText}>{item.title}</Text>
+            <Image source={{ uri: item.imageUrl }} style={styles.itemImage} />
+            <View style={styles.textContainer}>
+              <Text style={styles.listText}>{item.name}</Text>
+              <Text style={styles.itemAge}>Age: {item.age}</Text>
+              <Text style={styles.itemMajor}>Major: {item.major}</Text>
+            </View>
           </View>
         )}
         onScroll={scrollHandler} // ✅ Không lỗi, đúng cú pháp
-        scrollEventThrottle={16} 
+        scrollEventThrottle={16}
         contentContainerStyle={{ paddingTop: HEADER_MAX_HEIGHT }}
       />
     </View>
@@ -116,17 +124,41 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   listItem: {
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#fff",
+    flexDirection: "row",
     padding: 20,
-    marginVertical: 5,
-    marginHorizontal: 10,
+    marginVertical: 10,
+    marginHorizontal: 15,
     borderRadius: 10,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 5,
-    elevation: 2,
+    elevation: 3,
+    overflow: "hidden", // Đảm bảo ảnh không bị tràn ra ngoài item
+  },
+  itemImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    marginRight: 15,
+  },
+  textContainer: {
+    flex: 1,
+    justifyContent: "center",
   },
   listText: {
     fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+  },
+  itemAge: {
+    fontSize: 14,
+    color: "#777",
+    marginTop: 5,
+  },
+  itemMajor: {
+    fontSize: 14,
+    color: "#777",
+    marginTop: 5,
   },
 });
